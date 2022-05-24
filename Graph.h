@@ -104,6 +104,45 @@ public:
         }
     }
 
+
+    void dfsForSCC(int v, vector<ll>* ccs, bool show=false)
+    {
+        vis[v] = true;
+        if(show) cout << v << " ";
+        ccs->push_back(v);
+        //insert function or implementation on node :3
+        for (int i=0; i < adj[v].size(); i++){
+            if (!vis[adj[v][i].x]){
+                dfsForSCC(adj[v][i].x,ccs,show);
+        //insert function or implementation on children :3
+            }
+        }
+    }
+
+    vector< vector<ll> > SCC()
+    {
+        stack<int> Stack;
+        this->clearVis();
+
+        for(int i = 1; i <=V; i++){
+            if(vis[i] == false) fillOrder(i, Stack);
+        }
+        Graph gr = getTranspose();
+
+        gr.clearVis();
+        vector< vector<ll> > ans;
+        while (Stack.empty() == false){
+            int v = Stack.top();
+            Stack.pop();
+            if (gr.vis[v] == false){
+                vector<ll> ccs;
+                gr.dfsForSCC(v,&ccs,false);
+                ans.push_back(ccs);
+            }
+        }
+        return ans;
+    }
+
 	Graph getTranspose()
     {
         Graph g(V);
@@ -158,8 +197,9 @@ public:
             gr.addEdge(mst[i].y.x, mst[i].y.y, true, mst[i].x);
         }
         return gr;
+
     }
-	
+
     Graph mstPrim(bool show = false){
         ll g, h, w;
         for(ll i=1; i<=V; i++){
@@ -208,7 +248,7 @@ public:
         return gr;
     }
 
-    void dfsForTsort(int v, stack<ll>* s)
+    void dfsForTsort(int v, stack<ll>& s)
     {
         vis[v] = true;
         //insert function or implementation on node :3
@@ -218,7 +258,7 @@ public:
         //insert function or implementation on children :3
             }
         }
-        s->push(v);
+        s.push(v);
         return;
     }
 
@@ -227,7 +267,7 @@ public:
         clearVis();
         for(int i=1; i<=V; i++){
             if(!vis[i]){
-                dfsForTsort(i,&s);
+                dfsForTsort(i,s);
             }
         }
         ll* ans= new ll(V);
