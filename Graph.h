@@ -158,6 +158,83 @@ public:
             gr.addEdge(mst[i].y.x, mst[i].y.y, true, mst[i].x);
         }
         return gr;
+    }
+	
+    Graph mstPrim(bool show = false){
+        ll g, h, w;
+        for(ll i=1; i<=V; i++){
+            for(ll j=0; j<adj[i].size(); j++){
+                adj[i][j].y=1000000-adj[i][j].y;
+            }
+        }
+        clearVis();
+        priority_queue< pair< pll , ll> > q;
+        queue< pair< pll , ll> > mst;
+        vis[1]=true;
+        for(ll i=0; i<adj[1].size(); i++){
+            q.push(mp(mp(adj[1][i].y,adj[1][i].x),1));
+        }
+        while(!q.empty()){
+            pair< pll , ll> s=q.top();
+            q.pop();
+            if(vis[s.x.y] && vis[s.y]){
+                continue;
+            }
+            else{
+                mst.push(s);
+                ll vc, pc;
+                (vis[s.x.y])? pc=s.x.y : pc=s.y;
+                (vis[s.x.y])? vc=s.y : vc=s.x.y;
+                //cin>> vc;
+                ll kw=s.x.x;
+                //cin>> kw;
+                kw=1000000-kw;
+                vis[vc]=true;
+                for(ll i=0; i<adj[vc].size(); i++){
+                    if(!vis[adj[vc][i].x]){
+                        q.push(mp(mp(adj[vc][i].y,adj[vc][i].x),vc));
+                    }
+                }
+            }
+        }
+        Graph gr(V);
+        while(!mst.empty()){
+            pair< pll , ll> s=mst.front();
+            mst.pop();
+                s.x.x=1000000-s.x.x;
+            if(show) cout<< s.x.y<< "_"<< s.y<< " w="<< s.x.x<< "\n";
+            gr.addEdge(s.x.y, s.y, true, s.x.x);
+        }
+        return gr;
+    }
 
+    void dfsForTsort(int v, stack<ll>* s)
+    {
+        vis[v] = true;
+        //insert function or implementation on node :3
+        for (int i=0; i < adj[v].size(); i++){
+            if (!vis[adj[v][i].x]){
+                dfsForTsort(adj[v][i].x,s);
+        //insert function or implementation on children :3
+            }
+        }
+        s->push(v);
+        return;
+    }
+
+    ll* topologicalSort(){
+        stack<ll> s;
+        clearVis();
+        for(int i=1; i<=V; i++){
+            if(!vis[i]){
+                dfsForTsort(i,&s);
+            }
+        }
+        ll* ans= new ll(V);
+        for(ll i=0; i<V; i++){
+            ans[i]=s.top();
+            s.pop();
+        }
+        return ans;
     }
 };
