@@ -7,6 +7,8 @@ using namespace std;
 typedef int ll;
 
 #define pll pair<ll,ll>
+#define pld pair<ll,double>
+#define pdl pair<double,ll>
 #define mp make_pair
 #define x first
 #define y second
@@ -17,8 +19,12 @@ public:
 	int V;
 	int E;
 	bool dir;
-	vector< pll > *adj;
+	vector< pld > *adj;
 	bool *vis;
+	bool *exist;
+	bool one;
+    int si;
+    int ei;
 
 	void fillOrder(int v, stack<int> &Stack)
     {
@@ -29,13 +35,23 @@ public:
         Stack.push(v);
     }
 
-	Graph(int V, bool dir = true)
+	Graph(int V, bool dir = true, int one=true)
     {
         this->V = V;
         E=0;
-        adj = new vector< pll >[V+1];
+        adj = new vector< pld >[V+1];
         vis = new bool[V+1];
+        exist = new bool[V+1];
         this->dir = dir;
+        this->one = one;
+        if(one){
+            si=1;
+            ei=V;
+        }
+        else{
+            si=0;
+            ei=V-1;
+        }
     }
 
     void dfs(int v, bool show=false)
@@ -69,7 +85,7 @@ public:
         return;
     }
 
-	void addEdge(int g, int h, bool undir=true, int w=1)
+	void addEdge(int g, int h, bool undir=true, double w=1.0)
     {
         adj[g].push_back(mp(h,w));
         if(undir) adj[h].push_back(mp(g,w));
@@ -87,7 +103,7 @@ public:
         stack<int> Stack;
         this->clearVis();
 
-        for(int i = 1; i <=V; i++){
+        for(int i = si; i <=ei; i++){
             if(vis[i] == false) fillOrder(i, Stack);
         }
         Graph gr = getTranspose();
@@ -124,9 +140,10 @@ public:
         stack<int> Stack;
         this->clearVis();
 
-        for(int i = 1; i <=V; i++){
+        for(int i = si; i <=ei; i++){
             if(vis[i] == false) fillOrder(i, Stack);
         }
+
         Graph gr = getTranspose();
 
         gr.clearVis();
@@ -146,7 +163,7 @@ public:
 	Graph getTranspose()
     {
         Graph g(V);
-        for (int v = 1; v <= V; v++)
+        for (int v = si; v <= ei; v++)
         {
             for(int i = 0; i< adj[v].size(); i++)
             {
@@ -158,17 +175,17 @@ public:
 
     Graph mstKruskal(bool show = false){
         Graph gr(V);
-        pair< ll, pll > mst[V];
+        pair< double, pll > mst[V];
         ll dsus[V+1], dsub[V+1];
         vector<ll> slave[V+1];
-        vector< pair<ll, pll > > edge;
-        for(ll i=1; i<=this->V; i++){
+        vector< pair< double, pll > > edge;
+        for(ll i=si; i<=ei; i++){
             for(ll j=0; j<adj[i].size(); j++){
                 edge.push_back( mp(adj[i][j].y, mp(adj[i][j].x, i)));
             }
         }
         sort(edge.begin(),edge.end());
-        for(ll i=1; i<=V; i++){
+        for(ll i=si; i<=ei; i++){
             dsus[i]=1;
             dsub[i]=i;
             slave[i].push_back(i);
@@ -202,20 +219,20 @@ public:
 
     Graph mstPrim(bool show = false){
         ll g, h, w;
-        for(ll i=1; i<=V; i++){
+        for(ll i=si; i<=ei; i++){
             for(ll j=0; j<adj[i].size(); j++){
                 adj[i][j].y=1000000-adj[i][j].y;
             }
         }
         clearVis();
-        priority_queue< pair< pll , ll> > q;
-        queue< pair< pll , ll> > mst;
-        vis[1]=true;
-        for(ll i=0; i<adj[1].size(); i++){
-            q.push(mp(mp(adj[1][i].y,adj[1][i].x),1));
+        priority_queue< pair< pdl , ll> > q;
+        queue< pair< pdl , ll> > mst;
+        vis[si]=true;
+        for(ll i=0; i<adj[si].size(); i++){
+            q.push(mp(mp(adj[si][i].y,adj[si][i].x),si));
         }
         while(!q.empty()){
-            pair< pll , ll> s=q.top();
+            pair< pdl , ll> s=q.top();
             q.pop();
             if(vis[s.x.y] && vis[s.y]){
                 continue;
@@ -239,7 +256,7 @@ public:
         }
         Graph gr(V);
         while(!mst.empty()){
-            pair< pll , ll> s=mst.front();
+            pair< pdl , ll> s=mst.front();
             mst.pop();
                 s.x.x=1000000-s.x.x;
             if(show) cout<< s.x.y<< "_"<< s.y<< " w="<< s.x.x<< "\n";
@@ -265,7 +282,7 @@ public:
     ll* topologicalSort(){
         stack<ll> s;
         clearVis();
-        for(int i=1; i<=V; i++){
+        for(int i=si; i<=ei; i++){
             if(!vis[i]){
                 dfsForTsort(i,s);
             }
@@ -277,4 +294,15 @@ public:
         }
         return ans;
     }
+
+    bool isConnected(){
+        clearVis();
+        dfs(si);
+        ll w=0;
+        for(ll i=si; i<=ei; i++){
+            if(!vis[i]) w++;
+        }
+        return (w==0)? true : false;
+    }
+
 };
