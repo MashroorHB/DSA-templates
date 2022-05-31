@@ -305,4 +305,41 @@ public:
         return (w==0)? true : false;
     }
 
+    double totalWeight(){
+        double sum=0;
+        for(ll i=si; i<=ei; i++){
+            for(ll j=0; j<adj[i].size(); j++){
+                ll k=adj[i][j].x;
+                if(k>i || this->dir) sum+=adj[i][j].y;
+            }
+        }
+        return sum;
+    }
+
+    void showEdges(){
+        cout<< "{";
+        ll r=this->E;
+        for(ll i=si; i<=ei; i++){
+            for(ll j=0; j<adj[i].size(); j++){
+                ll k=adj[i][j].x;
+                if(k>i || this->dir){
+                    cout<< "("<< i<< ","<< k<< ")";
+                    r--;
+                    if(r>0) cout<< ",";
+                }
+            }
+        }
+        cout<< "}\n";
+    }
+	
+    ll countComponent(){
+        ll r=0;
+        clearVis();
+        for(ll i=si; i<=ei; i++){
+            if(!vis[i]){
+                r++;
+                dfs(i);
+            }
+        }
+        return r;
 };
