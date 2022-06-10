@@ -31,4 +31,9 @@
 		dijkstra: print shortest path cost using djikstra
 		bellmanford: lol
 		bipartite: assign colors if bipartite
+		makeMat: returns adj mat produced from adj list
+		apspMatrix:
+			matExpo: finds M^n using shorten
+			shorten: path relaxing using two matrices
+		apspFWarshall: lol
 		
