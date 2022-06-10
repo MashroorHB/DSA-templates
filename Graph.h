@@ -521,7 +521,7 @@ public:
         for(ll k=si; k<=ei; k++){
             for(ll i=si; i<=ei; i++){
                 for(ll j=si; j<=ei; j++){
-                    M2[i][j]=min(M1[i][j],M1[i][k]+M1[k][i]);
+                    M2[i][j]=min(M1[i][j],M1[i][k]+M1[k][j]);
                 }
             }
             for(ll i=si; i<=ei; i++){
