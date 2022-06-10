@@ -26,15 +26,6 @@ public:
     int si;
     int ei;
 
-	void fillOrder(int v, stack<int> &Stack)
-    {
-        vis[v] = true;
-        for(int i=0; i < adj[v].size(); i++)
-            if(!vis[adj[v][i].x])
-                fillOrder(adj[v][i].x, Stack);
-        Stack.push(v);
-    }
-
 	Graph(int V, bool dir = true, int one=true)
     {
         this->V = V;
@@ -66,6 +57,7 @@ public:
             }
         }
     }
+
     void bfs(int n, bool show=false){
         queue<ll> q;
         q.push(n);
@@ -98,13 +90,22 @@ public:
         }
 	};
 
+	void dfsForPrintSCC(int v, stack<int> &Stack)
+    {
+        vis[v] = true;
+        for(int i=0; i < adj[v].size(); i++)
+            if(!vis[adj[v][i].x])
+                dfsForPrintSCC(adj[v][i].x, Stack);
+        Stack.push(v);
+    }
+
 	void printSCCs()
     {
         stack<int> Stack;
         this->clearVis();
 
         for(int i = si; i <=ei; i++){
-            if(vis[i] == false) fillOrder(i, Stack);
+            if(vis[i] == false) dfsForPrintSCC(i, Stack);
         }
         Graph gr = getTranspose();
 
@@ -141,7 +142,7 @@ public:
         this->clearVis();
 
         for(int i = si; i <=ei; i++){
-            if(vis[i] == false) fillOrder(i, Stack);
+            if(vis[i] == false) dfsForPrintSCC(i, Stack);
         }
 
         Graph gr = getTranspose();
@@ -173,11 +174,28 @@ public:
         return g;
     }
 
-    Graph mstKruskal(bool show = false){
-        Graph gr(V);
-        pair< double, pll > mst[V];
-        ll dsus[V+1], dsub[V+1];
-        vector<ll> slave[V+1];
+    ll kpar(ll n, ll* dsup){
+        if(dsup[n]==n) return n;
+        return kpar(dsup[n],dsup);
+    }
+
+    void kcon(ll u, ll v, ll* dsup, ll* dsus){
+        if(dsus[u]<dsus[v]) swap(u,v);
+        dsus[u]+=dsus[v];
+        dsus[v]=0;
+        dsup[v]=u;
+        return;
+    }
+
+    Graph mstKruskal(bool show=true){
+        Graph gr(V,false,this->one);
+        ll* dsuS;
+        ll* dsuP;
+        dsuP = new ll[V+1];
+        dsuS = new ll[V+1];
+        for(ll i=si; i<=ei; i++){
+            dsuS[i]=1;  dsuP[i]=i;
+        }
         vector< pair< double, pll > > edge;
         for(ll i=si; i<=ei; i++){
             for(ll j=0; j<adj[i].size(); j++){
@@ -185,28 +203,15 @@ public:
             }
         }
         sort(edge.begin(),edge.end());
-        for(ll i=si; i<=ei; i++){
-            dsus[i]=1;
-            dsub[i]=i;
-            slave[i].push_back(i);
-        }
+        pair< double, pll > mst[V];
         ll r = 0, ans=0;
         for(ll i=0; i<edge.size() && r<V-1; i++){
-            ll g = edge[i].y.x;
-            ll h = edge[i].y.y;
-            if(dsub[g]!=dsub[h]){
+            ll g = kpar(edge[i].y.x,dsuP);
+            ll h = kpar(edge[i].y.y,dsuP);
+            if(g!=h){
                 mst[r]=edge[i]; r++;
                 ans+=edge[i].x;
-                g = dsub[g];
-                h = dsub[h];
-                if(dsus[g]<dsus[h]) swap(g,h);
-                for(ll i=0; i<dsus[h]; i++){
-                    dsub[slave[h][i]]=g;
-                    slave[g].push_back(slave[h][i]);
-                }
-                dsus[g]+=dsus[h];
-                dsus[h]=0;
-                slave[h].clear();
+                kcon(g,h,dsuP,dsuS);
             }
         }
         for(ll i=0; i<r; i++){
@@ -214,65 +219,42 @@ public:
             gr.addEdge(mst[i].y.x, mst[i].y.y, true, mst[i].x);
         }
         return gr;
-
     }
 
     Graph mstPrim(bool show = false){
-        ll g, h, w;
-        for(ll i=si; i<=ei; i++){
-            for(ll j=0; j<adj[i].size(); j++){
-                adj[i][j].y=1000000-adj[i][j].y;
-            }
-        }
+        ll from=si;
+        Graph g0(V,false,this->one);
         clearVis();
-        priority_queue< pair< pdl , ll> > q;
-        queue< pair< pdl , ll> > mst;
-        vis[si]=true;
-        for(ll i=0; i<adj[si].size(); i++){
-            q.push(mp(mp(adj[si][i].y,adj[si][i].x),si));
-        }
+        double* distance= new double[V+1];
+        for(ll i=0; i<=V; i++) distance[i]=100000000;
+        distance[from]=0;
+        priority_queue< pair< pdl, pld > > q;
+        q.push(mp(mp(0,from),mp(-1,0)));
         while(!q.empty()){
-            pair< pdl , ll> s=q.top();
+            ll a=q.top().x.y, p=q.top().y.x;
+            double z=q.top().y.y;
             q.pop();
-            if(vis[s.x.y] && vis[s.y]){
-                continue;
-            }
-            else{
-                mst.push(s);
-                ll vc, pc;
-                (vis[s.x.y])? pc=s.x.y : pc=s.y;
-                (vis[s.x.y])? vc=s.y : vc=s.x.y;
-                //cin>> vc;
-                ll kw=s.x.x;
-                //cin>> kw;
-                kw=1000000-kw;
-                vis[vc]=true;
-                for(ll i=0; i<adj[vc].size(); i++){
-                    if(!vis[adj[vc][i].x]){
-                        q.push(mp(mp(adj[vc][i].y,adj[vc][i].x),vc));
-                    }
+            if(vis[a]) continue;
+            vis[a]=true;
+            if(p!=-1) g0.addEdge(p,a,true,z);
+            for(ll i=0; i<adj[a].size(); i++){
+                ll b=adj[a][i].x;
+                double w=adj[a][i].y;
+                if(w < distance[b]){
+                    distance[b] = w;
+                    q.push(mp(mp(-distance[b],b),mp(a,w)));
                 }
             }
         }
-        Graph gr(V);
-        while(!mst.empty()){
-            pair< pdl , ll> s=mst.front();
-            mst.pop();
-                s.x.x=1000000-s.x.x;
-            if(show) cout<< s.x.y<< "_"<< s.y<< " w="<< s.x.x<< "\n";
-            gr.addEdge(s.x.y, s.y, true, s.x.x);
-        }
-        return gr;
+        return g0;
     }
 
     void dfsForTsort(int v, stack<ll>& s)
     {
         vis[v] = true;
-        //insert function or implementation on node :3
         for (int i=0; i < adj[v].size(); i++){
             if (!vis[adj[v][i].x]){
                 dfsForTsort(adj[v][i].x,s);
-        //insert function or implementation on children :3
             }
         }
         s.push(v);
@@ -331,7 +313,7 @@ public:
         }
         cout<< "}\n";
     }
-	
+
     ll countComponent(){
         ll r=0;
         clearVis();
@@ -342,4 +324,176 @@ public:
             }
         }
         return r;
+    }
+
+    void dijkstra(ll from, ll to){
+        clearVis();
+        double* distance= new double[V+1];
+        ll* par = new ll[V+1];
+        for(ll i=0; i<=V; i++) distance[i]=1000000000;
+        distance[from]=0;
+        priority_queue< pdl > q;
+        par[from]=-1;
+        q.push(mp(0,from));
+        while(!q.empty()){
+            ll a=q.top().y;
+            q.pop();
+            if(vis[a]) continue;
+            vis[a]=true;
+            for(ll i=0; i<adj[a].size(); i++){
+                ll b=adj[a][i].x;
+                double w=adj[a][i].y;
+                if(distance[a]+w < distance[b]){
+                    par[b]=a;
+                    distance[b] = distance[a]+w;
+                    q.push(mp(-distance[b],b));
+                }
+            }
+        }
+
+
+        cout<< "Shortest path cost: "<< distance[to]<< endl;
+        vector<ll> path;
+        if(distance[to]<100000000){
+            ll n=to;
+            while(n!=-1){
+                path.push_back(n);
+                n=par[n];
+            }
+        }
+        for(ll i=path.size()-1; i>=0; i--){
+            cout<< path[i];
+            if(i!=0) cout<< "->";
+        }
+        cout<< endl;
+        return;
+    }
+
+    void bellmanford(ll from, ll to){
+        double* distance;
+        ll* par;
+        distance = new double[V+1];
+        par = new ll[V+1];
+        for(ll i=0; i<=V; i++) distance[i]=1000000000;
+        distance[from]=0;
+        par[from]=-1;
+        for(ll j=0; j<V-1; j++){
+            for(ll i=si; i<=ei; i++){
+                for(ll k=0; k<adj[i].size(); k++){
+                    ll b=adj[i][k].x;
+                    double w=adj[i][k].y;
+                    if(distance[b]>distance[i]+w) par[b]=i;
+                    distance[b]=min(distance[b],distance[i]+w);
+                }
+            }
+        }
+
+        for(ll i=si; i<=ei; i++){
+            for(ll k=0; k<adj[i].size(); k++){
+                ll b=adj[i][k].x;
+                double w=adj[i][k].y;
+                if(distance[b]>distance[i]+w){
+                    cout<< "The graph contains a negative cycle\n";
+                    return;
+                }
+            }
+        }
+
+
+        cout<< "The graph does not contain a negative cycle\nShortest path cost: "<< distance[to]<< endl;
+        vector<ll> path;
+        if(distance[to]<100000000){
+            ll n=to;
+            while(n!=-1){
+                path.push_back(n);
+                n=par[n];
+            }
+        }
+        for(ll i=path.size()-1; i>=0; i--){
+            cout<< path[i];
+            if(i!=0) cout<< "->";
+        }
+        cout<< endl;
+        return;
+    }
+
+    void dijkstra(ll from, ll to){
+        clearVis();
+        double* distance= new double[V+1];
+        ll* par = new ll[V+1];
+        for(ll i=0; i<=V; i++) distance[i]=1000000000;
+        distance[from]=0;
+        priority_queue< pdl > q;
+        par[from]=-1;
+        q.push(mp(0,from));
+        while(!q.empty()){
+            ll a=q.top().y;
+            q.pop();
+            if(vis[a]) continue;
+            vis[a]=true;
+            for(ll i=0; i<adj[a].size(); i++){
+                ll b=adj[a][i].x;
+                double w=adj[a][i].y;
+                if(distance[a]+w < distance[b]){
+                    par[b]=a;
+                    distance[b] = distance[a]+w;
+                    q.push(mp(-distance[b],b));
+                }
+            }
+        }
+
+
+        cout<< "Shortest path cost: "<< distance[to]<< endl;
+        vector<ll> path;
+        if(distance[to]<100000000){
+            ll n=to;
+            while(n!=-1){
+                path.push_back(n);
+                n=par[n];
+            }
+        }
+        for(ll i=path.size()-1; i>=0; i--){
+            cout<< path[i];
+            if(i!=0) cout<< "->";
+        }
+        cout<< endl;
+        return;
+    }
+
+    ll* bipartite(){
+        ll* color= new ll[V+1];
+        for(ll i=0; i<=V; i++) color[i]=0;
+        ll w=0;
+        for(ll i=si; i<=ei; i++){
+            if(!vis[i]){
+                queue<ll> q;
+                q.push(i);
+                color[i]=1
+                vis[i]=true;
+                while(!q.empty()){
+                    int k = q.front();
+                    q.pop();
+                    if(show) cout << k << " ";
+                    //insert function or implementation on node :3
+                    for (int i=0; i < adj[k].size(); i++){
+                        if (!vis[adj[k][i].x]){
+                            q.push(adj[k][i].x);
+                            color[adj[k][i].x]=3-color[k];
+                            vis[adj[k][i].x]=true;
+                        }
+                    }
+                }
+            }
+        }
+        for(ll i=si; i<=ei; i++){
+            for(ll j=0; j<adj[i].size(); j++){
+                ll k=adj[i][j].x;
+                if(color[i]+color[k]!=3) w++;
+            }
+        }
+        if(w!=0){
+            for(ll i=0; i<=V; i++) color[i]=0;
+        }
+        return color;
+    }
 };
