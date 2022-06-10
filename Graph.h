@@ -418,48 +418,6 @@ public:
         return;
     }
 
-    void dijkstra(ll from, ll to){
-        clearVis();
-        double* distance= new double[V+1];
-        ll* par = new ll[V+1];
-        for(ll i=0; i<=V; i++) distance[i]=1000000000;
-        distance[from]=0;
-        priority_queue< pdl > q;
-        par[from]=-1;
-        q.push(mp(0,from));
-        while(!q.empty()){
-            ll a=q.top().y;
-            q.pop();
-            if(vis[a]) continue;
-            vis[a]=true;
-            for(ll i=0; i<adj[a].size(); i++){
-                ll b=adj[a][i].x;
-                double w=adj[a][i].y;
-                if(distance[a]+w < distance[b]){
-                    par[b]=a;
-                    distance[b] = distance[a]+w;
-                    q.push(mp(-distance[b],b));
-                }
-            }
-        }
-
-
-        cout<< "Shortest path cost: "<< distance[to]<< endl;
-        vector<ll> path;
-        if(distance[to]<100000000){
-            ll n=to;
-            while(n!=-1){
-                path.push_back(n);
-                n=par[n];
-            }
-        }
-        for(ll i=path.size()-1; i>=0; i--){
-            cout<< path[i];
-            if(i!=0) cout<< "->";
-        }
-        cout<< endl;
-        return;
-    }
 
     ll* bipartite(){
         ll* color= new ll[V+1];
@@ -496,5 +454,82 @@ public:
             for(ll i=0; i<=V; i++) color[i]=0;
         }
         return color;
+    }
+
+    db** makeMat(){
+        db** mat = new db*[V+1];
+        for(ll i=0; i<=V; i++){
+            mat[i]=new db[V+1];
+            for(ll j=0; j<=V; j++){
+                mat[i][j]=1000000000;
+            }
+            mat[i][i]=0;
+        }
+        for(ll i=si; i<=ei; i++){
+            for(ll j=0; j<adj[i].size(); j++){
+                ll k=adj[i][j].x;
+                mat[i][k]=adj[i][j].y;
+            }
+        }
+        return mat;
+    }
+
+    db** shorten(db** L1, db** L2){
+        db** M = new db*[V+1];
+        for(ll i=0; i<=V; i++)  M[i]=new db[V+1];
+
+        for(ll i=si; i<=ei; i++){
+            for(ll j=si; j<=ei; j++){
+                M[i][j]=1000000000;
+                for(ll k=si; k<=ei; k++){
+                    M[i][j]=min(M[i][j],L1[i][k]+L2[k][j]);
+                }
+            }
+        }
+
+        return M;
+    }
+
+    db** matExpo(ll n, db** L){
+        db** M = new db*[V+1];
+        for(ll i=0; i<=V; i++){
+            M[i]=new db[V+1];
+            for(ll j=0; j<=V; j++){
+                M[i][j]=1000000000;
+            }
+            M[i][i]=0;
+        }
+
+        if(n==0)return M;
+
+        M=matExpo(n/2,L);
+        M=shorten(M,M);
+        if(n%2==1) M=shorten(M,L);
+        return M;
+    }
+
+    db** apspMatrix(ll n = -1){
+        if(n==-1) n=V-1;
+        db** mat = this->makeMat();
+        return matExpo(n,mat);
+    }
+
+    db** apspFWarshall(ll n = -1){
+        if(n==-1) n=V;
+        db** M1 = this->makeMat();
+        db** M2 = this->makeMat();
+        for(ll k=si; k<=ei; k++){
+            for(ll i=si; i<=ei; i++){
+                for(ll j=si; j<=ei; j++){
+                    M2[i][j]=min(M1[i][j],M1[i][k]+M1[k][i]);
+                }
+            }
+            for(ll i=si; i<=ei; i++){
+                for(ll j=si; j<=ei; j++){
+                    M1[i][j]=M2[i][j];
+                }
+            }
+        }
+        return M1;
     }
 };
